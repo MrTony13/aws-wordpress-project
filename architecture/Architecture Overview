@@ -1,0 +1,10 @@
+This project uses a simple AWS architecture:
+
+- One EC2 instance running Apache, PHP, and WordPress
+- One RDS database storing WordPress data
+- AWS Backup for EC2 snapshots stored in S3
+- CloudWatch Monitoring enabled from the EC2 console (no manual agent installation)
+- IAM roles:
+  - SSM role for remote access
+  - CloudWatch Agent role for metrics
+- One AMI image used as a backup template
