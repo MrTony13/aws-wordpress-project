@@ -1,0 +1,132 @@
+This VPC design isolates your WordPress app properly and follows AWS best practices.
+
+The architecture includes:
+- 1 VPC
+- 1 Public Subnet (for EC2 + IGW)
+- 1 Private Subnet (for RDS)
+- Internet Gateway
+- Route Tables (public + private)
+- Security Groups (EC2 + RDS)
+- DB Subnet Group for RDS
+
+Follow these exact steps.
+
+---
+
+# 1. Create the VPC
+1. Go to AWS Console → VPC → **Create VPC**
+2. Choose **VPC Only**
+3. Name → `wordpress-vpc`
+4. IPv4 CIDR → `10.0.0.0/16`
+5. Create
+
+---
+
+# 2. Create Subnets
+
+## Public Subnet (for EC2)
+1. VPC → Subnets → Create Subnet
+2. Name → `public-subnet`
+3. VPC → `wordpress-vpc`
+4. AZ → pick the first one (e.g., eu-west-1a)
+5. CIDR → `10.0.1.0/24`
+6. Create
+7. Select the subnet → Actions → Edit subnet settings  
+   Enable: **Auto-assign IPv4 public address**
+
+## Private Subnet (for RDS)
+1. Create Subnet
+2. Name → `private-subnet`
+3. CIDR → `10.0.2.0/24`
+4. AZ → second one (e.g., eu-west-1b)
+5. Create  
+(Private subnet does NOT need auto-assign public IP)
+
+---
+
+# 3. Create Internet Gateway
+1. Left Menu → Internet Gateways → Create IGW  
+2. Name → `wordpress-igw`
+3. Attach to VPC → `wordpress-vpc`
+
+---
+
+# 4. Route Tables
+
+## Public Route Table
+1. Create Route Table  
+   Name → `public-rt`  
+   VPC → `wordpress-vpc`
+2. Click **Edit routes**
+   - Destination: `0.0.0.0/0`
+   - Target: **Internet Gateway (wordpress-igw)**
+3. Subnet associations → Associate `public-subnet`
+
+## Private Route Table
+1. Create Route Table  
+   Name → `private-rt`  
+   VPC → `wordpress-vpc`
+2. Associate `private-subnet`
+(No internet route → secured for database)
+
+---
+
+# 5. Security Groups
+
+## 5.1 EC2 Security Group
+Create Security Group:
+- Name: `ec2-sg`
+- VPC: `wordpress-vpc`
+
+Inbound Rules:
+| Type | Port | Source | Purpose |
+|------|-------|----------|-----------|
+| HTTP | 80 | 0.0.0.0/0 | Public website |
+| HTTPS | 443 | 0.0.0.0/0 | SSL if needed |
+| SSH | 22 | YOUR-IP | (Optional) |
+| MYSQL | 3306 | rds-sg | DB traffic allowed from RDS SG |
+
+Outbound:
+- All traffic allowed (default)
+
+## 5.2 RDS Security Group
+Create Security Group:
+- Name: `rds-sg`
+- VPC: `wordpress-vpc`
+
+Inbound Rules:
+| Type | Port | Source | Purpose |
+|------|-------|----------|-----------|
+| MYSQL | 3306 | ec2-sg | Only EC2 can access DB |
+
+Outbound:
+- All traffic allowed
+
+This prevents internet from hitting your DB — secure setup.
+
+---
+
+# 6. RDS Subnet Group (REQUIRED)
+
+RDS cannot launch without a **DB Subnet Group**.
+
+Steps:
+1. Go to RDS → Subnet Groups → Create
+2. Name → `wordpress-db-subnet-group`
+3. Description → WordPress Database Subnet Group
+4. VPC → `wordpress-vpc`
+5. Add Subnets:
+   - Choose **private-subnet**
+   - Choose **public-subnet** (RDS requires 2 AZs even if private)
+6. Save
+
+---
+
+# 🎉 VPC is COMPLETE  
+Your network is now professionally structured:
+- EC2 in public subnet  
+- RDS in private subnet  
+- Controlled database access  
+- Internet gateway attached  
+- Proper routing  
+- Proper segregation  
