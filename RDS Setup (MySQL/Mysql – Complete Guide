@@ -1,0 +1,84 @@
+This guide uses:
+- MySQL 8 (recommended)
+- Free-tier instance
+- Private subnet for security
+- Security groups from VPC config
+
+Follow these steps:
+
+---
+
+# 1. Create the RDS Instance
+1. Go to RDS → Create Database
+2. Choose:
+   - **MySQL**
+   - **Free Tier**
+3. DB Identifier → `wordpress-db`
+4. Master Username → `admin`
+5. Master Password → Your choice (store in Parameter Store)
+
+---
+
+# 2. Storage
+- Storage Type → gp2 / gp3
+- Size → 20GB
+- Disable autoscaling (optional)
+
+---
+
+# 3. Connectivity
+VPC → `wordpress-vpc`  
+DB Subnet Group → `wordpress-db-subnet-group`  
+Public Access → **NO**  
+VPC Security Group → **rds-sg**  
+
+---
+
+# 4. Additional Settings
+- Initial Database Name → `wordpress`
+- Backup retention → 7 days
+- Performance Insights → optional
+
+Click “Create database.”
+
+---
+
+# 5. Parameter Store (Optional but recommended)
+Go to Parameter Store → Create parameters:
+
+| Name | Value |
+|------|--------|
+| /wordpress/db_name | wordpress |
+| /wordpress/db_user | admin |
+| /wordpress/db_pass | yourpassword |
+| /wordpress/db_host | *copy from RDS endpoint* |
+
+Done.
+
+---
+
+# 📌 Connect WordPress from EC2 (Important)
+Edit `/var/www/html/wp-config.php`:
+
+```
+define('DB_NAME', 'wordpress');
+define('DB_USER', 'admin');
+define('DB_PASSWORD', 'yourpassword');
+define('DB_HOST', 'your-rds-endpoint');
+```
+
+Then restart Apache:
+
+```
+sudo systemctl restart httpd
+```
+
+---
+
+# 🎉 RDS is now correctly configured  
+This setup:
+- Runs securely in private subnet  
+- Cannot be accessed from the internet  
+- Accepts traffic only from EC2  
+- Uses proper subnet groups  
+- Is fully production-grade  
