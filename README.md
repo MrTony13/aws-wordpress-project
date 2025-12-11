@@ -1,1 +1,13 @@
-# aws-wordpress-project
+This repository contains a simple and clear AWS WordPress project setup using:
+
+- EC2 (Amazon Linux 2023)
+- RDS (MariaDB/MySQL)
+- IAM Roles
+- AWS Backup
+- CloudWatch Monitoring (enabled through EC2 console)
+- AMI backup image
+
+CloudFront, Route53, and Auto Scaling Group are not used:
+- CloudFront is not free tier
+- Route53 was removed because the IP changes with ASG
+- ASG removed because new instances break WordPress config
